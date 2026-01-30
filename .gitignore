@@ -1,0 +1,24 @@
+# --- Java / Maven (Backend) ---
+**/target/
+**/.mvn/
+**/mvnw*
+**/*.class
+**/app.log
+**/app_debug.log
+
+# --- Node / Next.js (Frontend) ---
+**/node_modules/
+**/.next/
+**/out/
+**/build/
+.env
+.env.local
+
+# --- IDEs y Sistema ---
+**/.idea/
+**/.vscode/
+**/.project
+**/.classpath
+**/bin/
+.DS_Store
+*.swp
