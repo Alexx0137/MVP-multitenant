@@ -18,6 +18,5 @@ public class LoginRequestDTO {
     @NotBlank(message = "{user.password.empty}")
     private String password;
 
-    @NotBlank(message = "{tenant.id.empty}")
     private String tenantId;
 }

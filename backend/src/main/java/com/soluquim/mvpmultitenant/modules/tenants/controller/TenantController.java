@@ -28,4 +28,9 @@ public class TenantController {
 
         return ResponseEntity.ok(tenantService.findAll());
     }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<TenantResponseDTO> findById(@PathVariable Long id) {
+        return ResponseEntity.ok(tenantService.findById(id));
+    }
 }

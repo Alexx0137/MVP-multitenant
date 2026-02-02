@@ -11,5 +11,7 @@ public interface TenantService {
 
     TenantResponseDTO save(TenantRequestDTO tenantRequestDTO);
 
+    TenantResponseDTO findById(Long id);
+
 
 }

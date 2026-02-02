@@ -28,7 +28,6 @@ public class UserRequestDTO {
 
     private String status;
 
-    @NotBlank(message = "{user.password.empty}")
     private String password;
 
 

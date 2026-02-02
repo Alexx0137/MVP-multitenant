@@ -1,5 +1,6 @@
 package com.soluquim.mvpmultitenant.modules.tenants.service.impl;
 
+import com.soluquim.mvpmultitenant.config.exception.ResourceNotFoundException;
 import com.soluquim.mvpmultitenant.modules.tenants.mapper.TenantMapper;
 import com.soluquim.mvpmultitenant.modules.tenants.model.Tenant;
 import com.soluquim.mvpmultitenant.modules.tenants.model.dto.TenantRequestDTO;
@@ -45,5 +46,11 @@ public class TenantServiceImpl implements TenantService {
         liquibaseService.runUpdateOnSchema(schemaName);
 
         return tenantMapper.toDTO(savedTenant);
+    }
+
+    public TenantResponseDTO findById(Long id) {
+        Tenant tenant = tenantRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("tenant.not.found"));
+        return tenantMapper.toDTO(tenant);
     }
 }

@@ -14,5 +14,5 @@ public class AuthenticationResponseDTO {
 
     private String token;
     private UserResponseDTO user;
-
+    private String tenantName;
 }

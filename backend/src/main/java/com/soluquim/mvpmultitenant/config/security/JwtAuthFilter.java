@@ -31,6 +31,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                                     FilterChain filterChain) throws ServletException, IOException {
 
         final String authHeader = request.getHeader("Authorization");
+        final String tenantHeader = request.getHeader("X-Tenant-ID");
         final String jwt;
         final String userEmail;
         final String tenantId;
@@ -44,20 +45,21 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
         try {
             userEmail = jwtService.extractUserName(jwt);
-            tenantId = jwtService.extractTenantId(jwt);
 
+            // Priorizar header sobre JWT
+            if (tenantHeader != null && !tenantHeader.isEmpty()) {
+                tenantId = tenantHeader;
+            } else {
+                tenantId = jwtService.extractTenantId(jwt);
+            }
             if (userEmail != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-
                 if (tenantId != null) {
                     TenantContext.setCurrentTenant(tenantId);
                 }
-
                 List<SimpleGrantedAuthority> authorities = jwtService.extractAuthorities(jwt);
                 UserDetails userDetails = new User(userEmail, "", authorities);
-
                 UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
                         userDetails, null, userDetails.getAuthorities());
-
                 authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                 SecurityContextHolder.getContext().setAuthentication(authToken);
             }

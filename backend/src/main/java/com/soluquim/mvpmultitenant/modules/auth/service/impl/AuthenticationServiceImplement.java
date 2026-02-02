@@ -2,6 +2,7 @@ package com.soluquim.mvpmultitenant.modules.auth.service.impl;
 
 import com.soluquim.mvpmultitenant.config.exception.ResourceNotFoundException;
 import com.soluquim.mvpmultitenant.config.multitenancy.TenantContext;
+import com.soluquim.mvpmultitenant.config.multitenancy.TenantDiscoveryService;
 import com.soluquim.mvpmultitenant.modules.auth.dto.AuthenticationRequestDTO;
 import com.soluquim.mvpmultitenant.modules.auth.dto.AuthenticationResponseDTO;
 import com.soluquim.mvpmultitenant.modules.auth.dto.LoginRequestDTO;
@@ -15,7 +16,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import com.soluquim.mvpmultitenant.modules.users.service.UserService;
 
@@ -29,6 +29,7 @@ public class AuthenticationServiceImplement implements AuthenticationService {
     private final AuthenticationManager authenticationManager;
     private final UserMapper userMapper;
     private final UserService userService;
+    private final TenantDiscoveryService tenantDiscovery;
 
     @Override
     public AuthenticationResponseDTO register(AuthenticationRequestDTO requestDTO) {
@@ -71,24 +72,37 @@ public class AuthenticationServiceImplement implements AuthenticationService {
 
     @Override
     public AuthenticationResponseDTO login(LoginRequestDTO loginDTO) {
-        TenantContext.setCurrentTenant(loginDTO.getTenantId());
+        String tenantId = loginDTO.getTenantId();
 
+        if (tenantId == null || tenantId.isEmpty()) {
+            tenantId = tenantDiscovery.findTenantByEmail(loginDTO.getEmail());
+
+            if (tenantId == null) {
+                throw new ResourceNotFoundException("user.not.found");
+            }
+        }
+
+        String tenantName = tenantId.equals("public") 
+        ? "Global" 
+        : tenantRepository.findBySchemaName(tenantId)
+            .map(tenant -> tenant.getName())
+            .orElse(tenantId);
+
+        TenantContext.setCurrentTenant(tenantId);
         try {
-            Authentication authentication = authenticationManager.authenticate(
-                    new UsernamePasswordAuthenticationToken(loginDTO.getEmail(), loginDTO.getPassword())
+            authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(
+                            loginDTO.getEmail(),
+                            loginDTO.getPassword()
+                    )
             );
-
-            log.debug("Authenticating user {}", authentication.getPrincipal());
-
             User user = userService.findUserEntityByEmail(loginDTO.getEmail());
-
-            String jwt = authService.generateToken(user, loginDTO.getTenantId());
-
+            String jwt = authService.generateToken(user, tenantId);
             return AuthenticationResponseDTO.builder()
                     .token(jwt)
                     .user(userMapper.toDTO(user))
+                    .tenantName(tenantName)
                     .build();
-
         } finally {
             TenantContext.clear();
         }
